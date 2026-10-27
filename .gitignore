@@ -1,0 +1,16 @@
+node_modules
+dist
+*.log
+*.local
+
+# Local env files
+.env
+.env.*
+!.env.example
+
+# Editors
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+.claude/

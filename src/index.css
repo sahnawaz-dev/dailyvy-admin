@@ -1,0 +1,337 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+
+/* Dark mode = <html class="dark">, set from the system setting in index.html. */
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: 'Geist Variable', sans-serif;
+
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* ==========================================================================
+ * COLOR THEMES × LIGHT / DARK MODE
+ *
+ * <html data-color-theme="red">  → pink, green (default), red, blue, sky, violet, orange, mono
+ * <html class="dark">            → dark variant of whichever color theme is active
+ * Both chosen in Profile → Appearance (src/shared/theme/themeStore.ts).
+ *
+ * Every theme only sets a few INPUTS (hue + its tuned primary color). All
+ * shadcn tokens below are DERIVED from them in one place, so backgrounds,
+ * sidebar, cards, borders, text, buttons and accents all come from the same
+ * color family. To add a theme: add an inputs block at the bottom + an entry
+ * in COLOR_THEMES (themeStore.ts).
+ *
+ * Selectors also match `[data-color-theme]` on any element (not just <html>),
+ * so a small preview can render another theme in place (ColorThemePicker).
+ * ========================================================================== */
+
+:root {
+  color-scheme: light;
+}
+
+:root.dark {
+  color-scheme: dark; /* native scrollbars, date/time inputs... */
+}
+
+/* ---- Derived tokens ----------------------------------------------------------
+ * T = --theme-tint (1 = tinted, 0 = pure grey for "mono"), H = --theme-hue
+ * ---------------------------------------------------------------------------- */
+:root,
+[data-color-theme] {
+  /* Page & surfaces: a light wash of the theme color */
+  --background: oklch(0.972 calc(0.02 * var(--theme-tint)) var(--theme-hue));
+  --card: oklch(0.99 calc(0.012 * var(--theme-tint)) var(--theme-hue));
+  --popover: var(--card);
+
+  /* Text: deep shades of the theme hue instead of plain black / grey */
+  --foreground: oklch(0.24 calc(0.05 * var(--theme-tint)) var(--theme-hue));
+  --card-foreground: var(--foreground);
+  --popover-foreground: var(--foreground);
+  --muted-foreground: oklch(0.5 calc(0.05 * var(--theme-tint)) var(--theme-hue));
+
+  /* Buttons */
+  --primary: var(--theme-primary);
+  --primary-foreground: var(--theme-primary-foreground);
+  --secondary: oklch(0.93 calc(0.04 * var(--theme-tint)) var(--theme-hue));
+  --secondary-foreground: oklch(0.3 calc(0.07 * var(--theme-tint)) var(--theme-hue));
+
+  /* Subtle fills & highlights */
+  --muted: oklch(0.945 calc(0.028 * var(--theme-tint)) var(--theme-hue));
+  --accent: oklch(0.92 calc(0.065 * var(--theme-tint)) var(--theme-hue));
+  --accent-foreground: oklch(0.36 calc(0.13 * var(--theme-tint)) var(--theme-hue));
+
+  --destructive: oklch(0.577 0.245 27.325);
+
+  /* Lines */
+  --border: oklch(0.885 calc(0.035 * var(--theme-tint)) var(--theme-hue));
+  --input: oklch(0.86 calc(0.04 * var(--theme-tint)) var(--theme-hue));
+  --ring: var(--theme-primary);
+
+  --chart-1: var(--theme-primary);
+  --chart-2: oklch(0.6 0.16 190);
+  --chart-3: oklch(0.7 0.17 75);
+  --chart-4: oklch(0.62 0.2 300);
+  --chart-5: oklch(0.62 0.2 25);
+
+  --radius: 0.75rem;
+
+  /* Sidebar: a slightly stronger tint so it reads as part of the theme */
+  --sidebar: oklch(0.95 calc(0.035 * var(--theme-tint)) var(--theme-hue));
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--theme-primary);
+  --sidebar-primary-foreground: var(--theme-primary-foreground);
+  --sidebar-accent: oklch(0.89 calc(0.08 * var(--theme-tint)) var(--theme-hue));
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--theme-primary);
+
+  /* Surfaces (cards, habit table): instead of flat white, a soft wash of the
+     theme colour with a faint glow of the primary colour in the top-right corner. */
+  --surface-gradient:
+    radial-gradient(110% 90% at 100% 0%, color-mix(in oklch, var(--theme-primary) 20%, transparent), transparent 62%),
+    radial-gradient(90% 70% at 0% 100%, color-mix(in oklch, var(--theme-primary) 9%, transparent), transparent 60%),
+    linear-gradient(160deg, oklch(0.995 calc(0.01 * var(--theme-tint)) var(--theme-hue)), oklch(0.955 calc(0.045 * var(--theme-tint)) var(--theme-hue)));
+
+  /* App token: today's column in the habit grid (translucent, so the surface shows through) */
+  --today: color-mix(in oklch, var(--theme-primary) 12%, transparent);
+}
+
+/* ---- Derived tokens — dark mode ----------------------------------------------
+ * Same recipe, flipped: deep tinted backgrounds, light tinted text, and the
+ * theme's primary a little brighter so it stands out on dark surfaces.
+ * ---------------------------------------------------------------------------- */
+.dark,
+.dark [data-color-theme] {
+  --background: oklch(0.165 calc(0.018 * var(--theme-tint)) var(--theme-hue));
+  --card: oklch(0.205 calc(0.022 * var(--theme-tint)) var(--theme-hue));
+  --popover: oklch(0.225 calc(0.025 * var(--theme-tint)) var(--theme-hue));
+
+  --foreground: oklch(0.955 calc(0.012 * var(--theme-tint)) var(--theme-hue));
+  --muted-foreground: oklch(0.71 calc(0.03 * var(--theme-tint)) var(--theme-hue));
+
+  --primary: color-mix(in oklch, var(--theme-primary) 88%, white);
+  --secondary: oklch(0.28 calc(0.03 * var(--theme-tint)) var(--theme-hue));
+  --secondary-foreground: oklch(0.94 calc(0.015 * var(--theme-tint)) var(--theme-hue));
+
+  --muted: oklch(0.26 calc(0.022 * var(--theme-tint)) var(--theme-hue));
+  --accent: oklch(0.31 calc(0.06 * var(--theme-tint)) var(--theme-hue));
+  --accent-foreground: oklch(0.93 calc(0.04 * var(--theme-tint)) var(--theme-hue));
+
+  --destructive: oklch(0.704 0.191 22.216);
+
+  --border: oklch(0.31 calc(0.025 * var(--theme-tint)) var(--theme-hue));
+  --input: oklch(0.36 calc(0.03 * var(--theme-tint)) var(--theme-hue));
+  --ring: var(--primary);
+
+  --sidebar: oklch(0.19 calc(0.022 * var(--theme-tint)) var(--theme-hue));
+  --sidebar-primary: var(--primary);
+  --sidebar-accent: oklch(0.29 calc(0.06 * var(--theme-tint)) var(--theme-hue));
+  --sidebar-ring: var(--primary);
+
+  --surface-gradient:
+    radial-gradient(110% 90% at 100% 0%, color-mix(in oklch, var(--theme-primary) 22%, transparent), transparent 62%),
+    radial-gradient(90% 70% at 0% 100%, color-mix(in oklch, var(--theme-primary) 10%, transparent), transparent 60%),
+    linear-gradient(160deg, oklch(0.235 calc(0.028 * var(--theme-tint)) var(--theme-hue)), oklch(0.19 calc(0.022 * var(--theme-tint)) var(--theme-hue)));
+
+  --today: color-mix(in oklch, var(--theme-primary) 20%, transparent);
+}
+
+/* ---- Theme inputs ------------------------------------------------------------
+ * --theme-hue                  hue used to tint everything
+ * --theme-tint                 1 = tinted neutrals, 0 = pure grey (mono)
+ * --theme-primary(-foreground) brand color (buttons, checkboxes, focus ring...)
+ * ---------------------------------------------------------------------------- */
+
+/* Green — "Fresh Growth" (default — matches the logo). The fallback uses :where(:root) —
+   zero specificity — so any chosen theme wins, wherever its block sits in this file. */
+:where(:root),
+[data-color-theme='green'] {
+  --theme-hue: 148;
+  --theme-tint: 1;
+  --theme-primary: oklch(0.6 0.18 149);
+  --theme-primary-foreground: oklch(0.985 0.01 149);
+}
+
+/* Pink — "Blossom" */
+[data-color-theme='pink'] {
+  --theme-hue: 354;
+  --theme-tint: 1;
+  --theme-primary: oklch(0.62 0.22 354);
+  --theme-primary-foreground: oklch(0.985 0.01 354);
+}
+
+/* Red — "Crimson" */
+[data-color-theme='red'] {
+  --theme-hue: 22;
+  --theme-tint: 1;
+  --theme-primary: oklch(0.577 0.215 27.3);
+  --theme-primary-foreground: oklch(0.985 0.01 27);
+}
+
+/* Blue — "Ocean" */
+[data-color-theme='blue'] {
+  --theme-hue: 262;
+  --theme-tint: 1;
+  --theme-primary: oklch(0.546 0.215 262.9);
+  --theme-primary-foreground: oklch(0.985 0.01 262);
+}
+
+/* Sky blue — "Sky" */
+[data-color-theme='sky'] {
+  --theme-hue: 232;
+  --theme-tint: 1;
+  --theme-primary: oklch(0.588 0.158 241.97);
+  --theme-primary-foreground: oklch(0.985 0.01 240);
+}
+
+/* Violet — "Lavender" */
+[data-color-theme='violet'] {
+  --theme-hue: 293;
+  --theme-tint: 1;
+  --theme-primary: oklch(0.541 0.247 293);
+  --theme-primary-foreground: oklch(0.985 0.01 293);
+}
+
+/* Orange — "Sunset" */
+[data-color-theme='orange'] {
+  --theme-hue: 50;
+  --theme-tint: 1;
+  --theme-primary: oklch(0.62 0.2 41);
+  --theme-primary-foreground: oklch(0.985 0.01 45);
+}
+
+/* Mono — classic black & white */
+[data-color-theme='mono'] {
+  --theme-hue: 0;
+  --theme-tint: 0;
+  --theme-primary: oklch(0.205 0 0);
+  --theme-primary-foreground: oklch(0.985 0 0);
+}
+
+/* Mono in dark mode: white buttons on black (a black primary would vanish) */
+.dark[data-color-theme='mono'],
+.dark [data-color-theme='mono'] {
+  --theme-primary: oklch(0.9 0 0);
+  --theme-primary-foreground: oklch(0.205 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  html {
+    @apply font-sans;
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * App-specific tokens (on top of shadcn's). Usage:
+ *   bg-success / text-success   completed days (stays green in every theme)
+ *   text-warning                streaks
+ *   bg-today                    today's column — derived from the theme above
+ *   bg-surface                  card background: theme-tinted gradient (Card uses it)
+ *   bg-surface-fixed            same gradient pinned to the viewport, so sticky
+ *                               table cells line up seamlessly with the table behind
+ *   bg-today-fixed              bg-surface-fixed with today's tint on top (sticky header)
+ * -------------------------------------------------------------------------- */
+:root {
+  --success: oklch(0.627 0.194 149.214);
+  --success-foreground: oklch(0.985 0 0);
+  --warning: oklch(0.666 0.157 58);
+}
+
+@utility bg-surface {
+  background-color: var(--card);
+  background-image: var(--surface-gradient);
+}
+
+@utility bg-surface-fixed {
+  background-color: var(--card);
+  background-image: var(--surface-gradient);
+  background-attachment: fixed;
+}
+
+@utility bg-today-fixed {
+  background-color: var(--card);
+  background-image: linear-gradient(var(--today), var(--today)), var(--surface-gradient);
+  background-attachment: fixed;
+}
+
+@theme inline {
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+
+  --color-warning: var(--warning);
+  --color-today: var(--today);
+
+  /* "Hoorah!" celebration confetti (shared/components/CelebrationOverlay.tsx) */
+  --animate-confetti-fall: confetti-fall 2.4s ease-in forwards;
+
+  @keyframes confetti-fall {
+    to {
+      transform: translateY(110vh) rotate(540deg);
+    }
+  }
+}
