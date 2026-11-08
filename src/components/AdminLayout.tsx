@@ -80,32 +80,21 @@ function AdminSidebar() {
         </div>
       ) : (
         <SidebarHeader className="group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-4 group-data-[collapsible=icon]:pt-6 wide:group-data-[collapsible=icon]:px-6 wide:group-data-[collapsible=icon]:pt-8">
-          <div className="flex items-center gap-2 group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:gap-3">
-            <Link
-              to="/"
-              className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1 py-1 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring group-data-[collapsible=icon]:flex-none group-data-[collapsible=icon]:p-0"
-            >
-              <img
-                src={logoSrc}
-                alt=""
-                className="size-8 shrink-0 rounded-lg group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:w-9 wide:group-data-[collapsible=icon]:h-10 wide:group-data-[collapsible=icon]:w-10"
-              />
-              <span className="truncate font-semibold group-data-[collapsible=icon]:hidden">Dailyvy Admin</span>
-            </Link>
-            <button
-              type="button"
-              onClick={toggleSidebar}
-              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-10 wide:group-data-[collapsible=icon]:size-[45px]"
-            >
-              <Toggle className="size-4 group-data-[collapsible=icon]:size-[18px] wide:group-data-[collapsible=icon]:size-5" />
-            </button>
-          </div>
+          <Link
+            to="/"
+            className="flex min-w-0 items-center gap-2 rounded-md px-1 py-1 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring group-data-[collapsible=icon]:p-0"
+          >
+            <img
+              src={logoSrc}
+              alt=""
+              className="size-8 shrink-0 rounded-lg group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:w-9 wide:group-data-[collapsible=icon]:h-10 wide:group-data-[collapsible=icon]:w-10"
+            />
+            <span className="truncate font-semibold group-data-[collapsible=icon]:hidden">Dailyvy Admin</span>
+          </Link>
         </SidebarHeader>
       )}
 
-      <SidebarContent className="p-0 pb-4 md:pl-2 md:pt-2 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:pt-12 wide:group-data-[collapsible=icon]:pt-16">
+      <SidebarContent className="p-0 pb-4 md:pl-2 md:pt-2 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:pt-6 wide:group-data-[collapsible=icon]:pt-8">
         <SidebarMenu className="space-y-1.5 pr-3 md:space-y-1 md:pr-0 group-data-[collapsible=icon]:items-center">
           {NAV.map(({ to, label, icon: Icon, end }) => {
             const active = end ? pathname === to : pathname.startsWith(to)
@@ -123,7 +112,7 @@ function AdminSidebar() {
         </SidebarMenu>
       </SidebarContent>
 
-      <SidebarFooter className="pr-3 md:pr-2 group-data-[collapsible=icon]:items-center">
+      <SidebarFooter className="pr-3 md:pr-0 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:pr-2">
         <p
           className="truncate px-4 pb-1 text-xs text-muted-foreground md:px-2 group-data-[collapsible=icon]:hidden"
           title={admin?.email}
@@ -137,6 +126,20 @@ function AdminSidebar() {
               <span>Log out</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
+          {/* Collapse / expand: always the last item, so it doesn't move around */}
+          {!isMobile && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                tooltip={collapsed ? 'Expand sidebar' : undefined}
+                aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                onClick={toggleSidebar}
+                className={cn(navButton, 'text-muted-foreground')}
+              >
+                <Toggle />
+                <span>Collapse sidebar</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
         </SidebarMenu>
       </SidebarFooter>
       {!isMobile && <SidebarRail />}
