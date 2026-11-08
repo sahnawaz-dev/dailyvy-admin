@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { KeyRound, Pause, Play, Search, ShieldPlus, Trash2, Users } from 'lucide-react'
+import { KeyRound, Pause, Play, Search, ShieldPlus, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { ConfirmButton } from '@/components/ConfirmButton'
+import { RemoveUserButton } from '@/components/RemoveUserButton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -61,9 +62,14 @@ export function UsersTab() {
     onError: (error) => toast.error(errorMessage(error)),
   })
   const remove = useMutation({
-    mutationFn: (user: User) => api.delete(`/users/${user.id}`),
-    onSuccess: (_data, user) => {
-      toast.success(`${user.name}'s account was removed`)
+    mutationFn: ({ user, note }: { user: User; note: string }) =>
+      api.delete<{ emailed: boolean }>(`/users/${user.id}`, { note }),
+    onSuccess: ({ emailed }, { user }) => {
+      toast.success(
+        emailed
+          ? `${user.name}'s account was removed — your note was emailed to them`
+          : `${user.name}'s account was removed, but the email didn't go out`,
+      )
       refresh()
     },
     onError: (error) => toast.error(errorMessage(error)),
@@ -189,18 +195,11 @@ export function UsersTab() {
                             Make admin
                           </ConfirmButton>
                         )}
-                        <ConfirmButton
-                          title={`Remove ${user.name}?`}
-                          description="Their account and ALL their data (habits, tasks, focus history, challenges) are deleted for good. This can't be undone. To just stop them for now, use Pause."
-                          confirmLabel="Remove for good"
-                          destructive
-                          variant="ghost"
+                        <RemoveUserButton
+                          user={user}
                           disabled={remove.isPending}
-                          onConfirm={() => remove.mutate(user)}
-                        >
-                          <Trash2 />
-                          Remove
-                        </ConfirmButton>
+                          onRemove={(note) => remove.mutateAsync({ user, note })}
+                        />
                       </div>
                     </TableCell>
                   </TableRow>
