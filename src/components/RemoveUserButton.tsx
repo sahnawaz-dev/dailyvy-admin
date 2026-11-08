@@ -20,18 +20,30 @@ const MIN_NOTE = 5
 const MAX_NOTE = 1000
 
 interface RemoveUserButtonProps {
-  user: User
+  /** One user (the row's Remove) or several (Remove selected). */
+  users: User[]
+  /** The trigger: "Remove" on a row, "Remove selected (3)" for a selection. */
+  label?: string
+  variant?: 'ghost' | 'destructive'
   disabled?: boolean
   /** Resolves once removed (the dialog then closes); rejects to keep it open. */
   onRemove: (note: string) => Promise<unknown>
 }
 
-/** "Remove" asks why: the note is required and emailed to the person before their account goes. */
-export function RemoveUserButton({ user, disabled, onRemove }: RemoveUserButtonProps) {
+/** "Remove" asks why: the note is required and emailed to each person before their account goes. */
+export function RemoveUserButton({
+  users,
+  label = 'Remove',
+  variant = 'ghost',
+  disabled,
+  onRemove,
+}: RemoveUserButtonProps) {
   const [open, setOpen] = useState(false)
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
   const ready = note.trim().length >= MIN_NOTE
+  const single = users.length === 1 ? users[0] : null
+  const noteId = `remove-note-${single?.id ?? 'selected'}`
 
   const remove = async () => {
     setBusy(true)
@@ -49,23 +61,36 @@ export function RemoveUserButton({ user, disabled, onRemove }: RemoveUserButtonP
   return (
     <AlertDialog open={open} onOpenChange={(next) => !busy && setOpen(next)}>
       <AlertDialogTrigger asChild>
-        <Button size="sm" variant="ghost" disabled={disabled}>
+        <Button size="sm" variant={variant} disabled={disabled || users.length === 0}>
           <Trash2 />
-          Remove
+          {label}
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Remove {user.name}?</AlertDialogTitle>
+          <AlertDialogTitle>
+            {single ? `Remove ${single.name}?` : `Remove ${users.length} users?`}
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            Their account and ALL their data (habits, tasks, focus history, challenges) are deleted for good. This
-            can't be undone. To just stop them for now, use Pause.
+            {single ? 'Their account and ALL their data' : 'Their accounts and ALL their data'} (habits, tasks, focus
+            history, challenges) are deleted for good. This can't be undone. To just stop someone for now, use Pause.
           </AlertDialogDescription>
         </AlertDialogHeader>
+        {!single && (
+          <ul className="max-h-32 overflow-y-auto rounded-md border px-3 py-2 text-sm">
+            {users.map((user) => (
+              <li key={user.id} className="truncate">
+                {user.name} <span className="text-muted-foreground">· {user.email}</span>
+              </li>
+            ))}
+          </ul>
+        )}
         <Field>
-          <FieldLabel htmlFor={`remove-note-${user.id}`}>Why? (emailed to {user.email})</FieldLabel>
+          <FieldLabel htmlFor={noteId}>
+            Why? {single ? `(emailed to ${single.email})` : '(emailed to each of them)'}
+          </FieldLabel>
           <Textarea
-            id={`remove-note-${user.id}`}
+            id={noteId}
             rows={4}
             maxLength={MAX_NOTE}
             placeholder="e.g. This account has been inactive for over a year, so we're freeing up the spot."
@@ -80,7 +105,7 @@ export function RemoveUserButton({ user, disabled, onRemove }: RemoveUserButtonP
           <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
           <Button variant="destructive" disabled={!ready || busy} onClick={remove}>
             {busy && <Spinner />}
-            Email and remove
+            {single ? 'Email and remove' : `Email and remove ${users.length}`}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

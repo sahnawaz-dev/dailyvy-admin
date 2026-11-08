@@ -1,19 +1,29 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { KeyRound, Pause, Play, Search, ShieldPlus, Users } from 'lucide-react'
+import { KeyRound, Pause, Play, Search, ShieldPlus, Users, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { ConfirmButton } from '@/components/ConfirmButton'
 import { RemoveUserButton } from '@/components/RemoveUserButton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Input } from '@/components/ui/input'
+import { NativeSelect, NativeSelectOptGroup, NativeSelectOption } from '@/components/ui/native-select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useSession } from '@/auth/session'
 import { api, errorMessage, type User } from '@/lib/api'
 import { formatAgo, formatDate, formatDateTime } from '@/lib/format'
+import {
+  ACTIVITY_OPTIONS,
+  filterUsers,
+  isInactiveFilter,
+  STATUS_OPTIONS,
+  type ActivityFilter,
+  type StatusFilter,
+} from '@/lib/userFilters'
 
 /** One line under the name: admin / paused / still on the temporary password / not verified. */
 function StatusBadges({ user }: { user: User }) {
@@ -31,6 +41,9 @@ function StatusBadges({ user }: { user: User }) {
 export function UsersTab() {
   const isOwner = useSession((s) => s.admin?.role === 'owner')
   const [search, setSearch] = useState('')
+  const [activity, setActivity] = useState<ActivityFilter>('any')
+  const [status, setStatus] = useState<StatusFilter>('all')
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const queryClient = useQueryClient()
   const users = useQuery({ queryKey: ['users'], queryFn: () => api.get<User[]>('/users') })
   const refresh = () => queryClient.invalidateQueries()
@@ -75,17 +88,53 @@ export function UsersTab() {
     onError: (error) => toast.error(errorMessage(error)),
   })
 
-  const term = search.trim().toLowerCase()
-  const shown = (users.data ?? []).filter(
-    (user) => !term || user.name.toLowerCase().includes(term) || user.email.toLowerCase().includes(term),
-  )
+  const shown = filterUsers(users.data ?? [], { search, activity, status })
+  const filtered = Boolean(search.trim()) || activity !== 'any' || status !== 'all'
+  // Only rows on screen count as selected (a filter change hides the rest)
+  const selected = shown.filter((user) => selectedIds.has(user.id))
+  const allSelected = shown.length > 0 && selected.length === shown.length
+
+  const toggle = (id: string, on: boolean) =>
+    setSelectedIds((current) => {
+      const next = new Set(current)
+      if (on) next.add(id)
+      else next.delete(id)
+      return next
+    })
+  const toggleAll = (on: boolean) => setSelectedIds(on ? new Set(shown.map((user) => user.id)) : new Set())
+  const clearFilters = () => {
+    setSearch('')
+    setActivity('any')
+    setStatus('all')
+  }
+
+  /** Remove selected: one by one, each person gets the email with the note first. */
+  const removeSelected = async (note: string) => {
+    let removed = 0
+    let notEmailed = 0
+    for (const user of selected) {
+      try {
+        const { emailed } = await api.delete<{ emailed: boolean }>(`/users/${user.id}`, { note })
+        removed += 1
+        if (!emailed) notEmailed += 1
+      } catch (error) {
+        toast.error(`${user.name}: ${errorMessage(error)}`)
+      }
+    }
+    setSelectedIds(new Set())
+    refresh()
+    if (removed === 0) return
+    const accounts = `${removed} ${removed === 1 ? 'account' : 'accounts'} removed`
+    toast.success(
+      notEmailed
+        ? `${accounts} (${notEmailed} email${notEmailed === 1 ? '' : 's'} didn't go out)`
+        : `${accounts} — your note was emailed to each`,
+    )
+  }
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">
-          {users.data ? `${users.data.length} ${users.data.length === 1 ? 'person' : 'people'}` : ''}
-        </p>
+      <div className="flex flex-wrap items-center gap-3">
         <div className="relative w-full sm:w-64">
           <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -95,7 +144,61 @@ export function UsersTab() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
+        <NativeSelect
+          aria-label="Activity"
+          value={activity}
+          onChange={(e) => setActivity(e.target.value as ActivityFilter)}
+        >
+          <NativeSelectOption value="any">Any time</NativeSelectOption>
+          {(['Active', 'Inactive'] as const).map((group) => (
+            <NativeSelectOptGroup key={group} label={group}>
+              {ACTIVITY_OPTIONS.filter((option) => option.group === group).map((option) => (
+                <NativeSelectOption key={option.value} value={option.value}>
+                  {option.label}
+                </NativeSelectOption>
+              ))}
+            </NativeSelectOptGroup>
+          ))}
+        </NativeSelect>
+        <NativeSelect aria-label="Status" value={status} onChange={(e) => setStatus(e.target.value as StatusFilter)}>
+          {STATUS_OPTIONS.map((option) => (
+            <NativeSelectOption key={option.value} value={option.value}>
+              {option.label}
+            </NativeSelectOption>
+          ))}
+        </NativeSelect>
+        {filtered && (
+          <Button variant="ghost" size="sm" onClick={clearFilters}>
+            <X />
+            Clear filters
+          </Button>
+        )}
+        <p className="ml-auto text-sm text-muted-foreground">
+          {users.data
+            ? filtered
+              ? `${shown.length} of ${users.data.length}`
+              : `${users.data.length} ${users.data.length === 1 ? 'person' : 'people'}`
+            : ''}
+          {isInactiveFilter(activity) && shown.length > 0 && ' · longest inactive first'}
+        </p>
       </div>
+
+      {selected.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/40 px-4 py-2">
+          <p className="text-sm font-medium">{selected.length} selected</p>
+          <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>
+            Clear selection
+          </Button>
+          <div className="ml-auto">
+            <RemoveUserButton
+              users={selected}
+              label={`Remove selected (${selected.length})`}
+              variant="destructive"
+              onRemove={removeSelected}
+            />
+          </div>
+        </div>
+      )}
 
       <Card>
         <CardContent>
@@ -112,9 +215,9 @@ export function UsersTab() {
                 <EmptyMedia variant="icon">
                   <Users />
                 </EmptyMedia>
-                <EmptyTitle>{term ? 'No matches' : 'No users yet'}</EmptyTitle>
+                <EmptyTitle>{filtered ? 'No matches' : 'No users yet'}</EmptyTitle>
                 <EmptyDescription>
-                  {term ? 'Try another name or email.' : 'Approved access requests become users.'}
+                  {filtered ? 'No one fits these filters.' : 'Approved access requests become users.'}
                 </EmptyDescription>
               </EmptyHeader>
             </Empty>
@@ -122,6 +225,13 @@ export function UsersTab() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      aria-label="Select all shown"
+                      checked={allSelected ? true : selected.length > 0 ? 'indeterminate' : false}
+                      onCheckedChange={(checked) => toggleAll(checked === true)}
+                    />
+                  </TableHead>
                   <TableHead>User</TableHead>
                   <TableHead>Last active</TableHead>
                   <TableHead className="text-right">Devices</TableHead>
@@ -132,7 +242,18 @@ export function UsersTab() {
               </TableHeader>
               <TableBody>
                 {shown.map((user) => (
-                  <TableRow key={user.id} className={user.pausedAt ? 'opacity-70' : undefined}>
+                  <TableRow
+                    key={user.id}
+                    data-state={selectedIds.has(user.id) ? 'selected' : undefined}
+                    className={user.pausedAt ? 'opacity-70' : undefined}
+                  >
+                    <TableCell>
+                      <Checkbox
+                        aria-label={`Select ${user.name}`}
+                        checked={selectedIds.has(user.id)}
+                        onCheckedChange={(checked) => toggle(user.id, checked === true)}
+                      />
+                    </TableCell>
                     <TableCell>
                       <p className="font-medium">{user.name}</p>
                       <p className="text-muted-foreground">{user.email}</p>
@@ -196,7 +317,7 @@ export function UsersTab() {
                           </ConfirmButton>
                         )}
                         <RemoveUserButton
-                          user={user}
+                          users={[user]}
                           disabled={remove.isPending}
                           onRemove={(note) => remove.mutateAsync({ user, note })}
                         />
