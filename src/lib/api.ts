@@ -68,12 +68,13 @@ export interface Admin {
   id: string
   email: string
   name: string
-  role: 'admin'
-  createdAt: string
+  /** Missing from an older server: treated as 'admin'. */
+  role?: 'admin'
+  createdAt?: string
   /** This login. */
-  lastLoginAt: string | null
+  lastLoginAt?: string | null
   /** The one before it. */
-  previousLoginAt: string | null
+  previousLoginAt?: string | null
 }
 
 export interface Stats {

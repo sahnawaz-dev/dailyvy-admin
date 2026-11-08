@@ -15,7 +15,7 @@ import { useSession } from '@/auth/session'
 import { api, errorMessage, type Admin } from '@/lib/api'
 import { formatAgo, formatDate, formatDateTime } from '@/lib/format'
 
-const ROLE_LABEL: Record<Admin['role'], string> = { admin: 'Admin' }
+const ROLE_LABEL: Record<NonNullable<Admin['role']>, string> = { admin: 'Admin' }
 
 function Detail({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -77,7 +77,7 @@ export function AccountPage() {
                   <CardDescription className="truncate">{admin!.email}</CardDescription>
                   <Badge className="mt-1.5">
                     <ShieldCheck />
-                    {ROLE_LABEL[admin!.role] ?? admin!.role}
+                    {ROLE_LABEL[admin!.role ?? 'admin']}
                   </Badge>
                 </div>
               </div>
