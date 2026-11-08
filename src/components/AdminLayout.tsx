@@ -1,6 +1,35 @@
-import { KeyRound, LayoutDashboard, LogOut, UserPlus, Users } from 'lucide-react'
-import { NavLink, Navigate, Outlet } from 'react-router'
-import { Button } from '@/components/ui/button'
+/**
+ * The logged-in shell: shadcn's Sidebar (collapsible to icons on desktop, a
+ * drawer below the top bar on phones) with the sections, the admin and Log out.
+ * Sizes follow the team's responsive sidebar spec: a little smaller on screens
+ * up to 17" (≤ 1680px), larger above (`wide:`).
+ */
+import { useLayoutEffect, useRef, type CSSProperties } from 'react'
+import {
+  ChevronsLeft,
+  ChevronsRight,
+  Equal,
+  KeyRound,
+  LayoutDashboard,
+  LogOut,
+  UserPlus,
+  Users,
+  X,
+} from 'lucide-react'
+import { Link, Navigate, NavLink, Outlet, useLocation } from 'react-router'
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarRail,
+  useSidebar,
+} from '@/components/ui/sidebar'
 import { useSession } from '@/auth/session'
 import { cn } from '@/lib/utils'
 
@@ -11,51 +40,164 @@ const NAV = [
   { to: '/password', label: 'Change password', icon: KeyRound },
 ]
 
-/** The logged-in shell: top bar with the sections and Log out. */
-export function AdminLayout() {
-  const token = useSession((s) => s.token)
+const logoSrc = `${import.meta.env.BASE_URL}favicon-32.png`
+
+/** Nav buttons: responsive sizes for the expanded and collapsed (icon) sidebar, pill tabs on phones. */
+const navButton = cn(
+  'h-12 w-full justify-start gap-3.5 rounded-l-none rounded-r-2xl pl-4 pr-3 text-[15px] font-medium',
+  '[&_svg]:size-5 wide:[&_svg]:size-6',
+  'md:h-11 md:gap-3 md:rounded-l-xl md:rounded-r-none md:px-3 md:text-sm',
+  'wide:h-12 wide:gap-3.5 wide:text-[15px]',
+  'group-data-[collapsible=icon]:size-12! group-data-[collapsible=icon]:rounded-[14px]! group-data-[collapsible=icon]:[&_svg]:size-5',
+  'wide:group-data-[collapsible=icon]:size-14! wide:group-data-[collapsible=icon]:rounded-[16px]! wide:group-data-[collapsible=icon]:[&_svg]:size-6',
+  'group-data-[collapsible=icon]:justify-center',
+)
+
+function AdminSidebar() {
+  const { isMobile, setOpenMobile, state, toggleSidebar } = useSidebar()
   const admin = useSession((s) => s.admin)
   const logout = useSession((s) => s.logout)
+  const { pathname } = useLocation()
+  const closeOnPhone = () => {
+    if (isMobile) setOpenMobile(false)
+  }
+  const collapsed = state === 'collapsed' && !isMobile
+  const Toggle = collapsed ? ChevronsRight : ChevronsLeft
+
+  return (
+    <Sidebar collapsible="icon">
+      {isMobile ? (
+        <div className="flex h-12 w-full items-center justify-end px-3">
+          <button
+            type="button"
+            onClick={() => setOpenMobile(false)}
+            aria-label="Close menu"
+            className="flex size-8 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-sidebar-accent"
+          >
+            <X className="size-5" />
+          </button>
+        </div>
+      ) : (
+        <SidebarHeader className="group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-4 group-data-[collapsible=icon]:pt-6 wide:group-data-[collapsible=icon]:px-6 wide:group-data-[collapsible=icon]:pt-8">
+          <div className="flex items-center gap-2 group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:gap-3">
+            <Link
+              to="/"
+              className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1 py-1 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring group-data-[collapsible=icon]:flex-none group-data-[collapsible=icon]:p-0"
+            >
+              <img
+                src={logoSrc}
+                alt=""
+                className="size-8 shrink-0 rounded-lg group-data-[collapsible=icon]:h-9 group-data-[collapsible=icon]:w-9 wide:group-data-[collapsible=icon]:h-10 wide:group-data-[collapsible=icon]:w-10"
+              />
+              <span className="truncate font-semibold group-data-[collapsible=icon]:hidden">Dailyvy Admin</span>
+            </Link>
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-10 wide:group-data-[collapsible=icon]:size-[45px]"
+            >
+              <Toggle className="size-4 group-data-[collapsible=icon]:size-[18px] wide:group-data-[collapsible=icon]:size-5" />
+            </button>
+          </div>
+        </SidebarHeader>
+      )}
+
+      <SidebarContent className="p-0 pb-4 md:pl-2 md:pt-2 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:pt-12 wide:group-data-[collapsible=icon]:pt-16">
+        <SidebarMenu className="space-y-1.5 pr-3 md:space-y-1 md:pr-0 group-data-[collapsible=icon]:items-center">
+          {NAV.map(({ to, label, icon: Icon, end }) => {
+            const active = end ? pathname === to : pathname.startsWith(to)
+            return (
+              <SidebarMenuItem key={to}>
+                <SidebarMenuButton asChild isActive={active} tooltip={label} className={navButton}>
+                  <NavLink to={to} end={end} onClick={closeOnPhone}>
+                    <Icon />
+                    <span>{label}</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )
+          })}
+        </SidebarMenu>
+      </SidebarContent>
+
+      <SidebarFooter className="pr-3 md:pr-2 group-data-[collapsible=icon]:items-center">
+        <p
+          className="truncate px-4 pb-1 text-xs text-muted-foreground md:px-2 group-data-[collapsible=icon]:hidden"
+          title={admin?.email}
+        >
+          {admin?.email}
+        </p>
+        <SidebarMenu className="group-data-[collapsible=icon]:items-center">
+          <SidebarMenuItem>
+            <SidebarMenuButton tooltip="Log out" onClick={logout} className={navButton}>
+              <LogOut />
+              <span>Log out</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+      {!isMobile && <SidebarRail />}
+    </Sidebar>
+  )
+}
+
+/** Phones only: hamburger + logo. Publishes its height so the drawer opens below it. */
+function MobileTopBar() {
+  const { toggleSidebar } = useSidebar()
+  const headerRef = useRef<HTMLElement>(null)
+
+  useLayoutEffect(() => {
+    const el = headerRef.current
+    if (!el) return
+    const setHeight = () =>
+      document.documentElement.style.setProperty('--navbar-height', `${el.offsetHeight}px`)
+    setHeight()
+    const observer = new ResizeObserver(setHeight)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  return (
+    <header
+      ref={headerRef}
+      className="sticky top-0 z-60 flex items-center gap-3 border-b bg-background px-4 py-3 md:hidden"
+    >
+      <button
+        type="button"
+        onClick={toggleSidebar}
+        aria-label="Toggle sidebar"
+        className="flex size-9 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
+      >
+        <Equal className="size-5" />
+      </button>
+      <Link to="/" className="flex flex-1 items-center justify-center gap-2 font-semibold">
+        <img src={logoSrc} alt="" className="size-8 rounded-lg" />
+        Dailyvy Admin
+      </Link>
+      <span className="size-9" aria-hidden />
+    </header>
+  )
+}
+
+export function AdminLayout() {
+  const token = useSession((s) => s.token)
   if (!token) return <Navigate to="/login" replace />
 
   return (
-    <div className="min-h-svh bg-muted/30">
-      <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-          <div className="flex items-center gap-2 font-semibold">
-            <img src={`${import.meta.env.BASE_URL}favicon-32.png`} alt="" className="size-7" />
-            Dailyvy Admin
-          </div>
-          <nav className="order-last flex w-full gap-1 overflow-x-auto sm:order-none sm:w-auto">
-            {NAV.map(({ to, label, icon: Icon, end }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={end}
-                className={({ isActive }) =>
-                  cn(
-                    'flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground',
-                    isActive && 'bg-muted font-medium text-foreground',
-                  )
-                }
-              >
-                <Icon className="size-4" />
-                {label}
-              </NavLink>
-            ))}
-          </nav>
-          <div className="ml-auto flex items-center gap-2">
-            <span className="hidden text-sm text-muted-foreground md:inline">{admin?.email}</span>
-            <Button variant="outline" size="sm" onClick={logout}>
-              <LogOut />
-              Log out
-            </Button>
-          </div>
-        </div>
-      </header>
-      <main className="mx-auto max-w-6xl px-4 py-6">
-        <Outlet />
-      </main>
-    </div>
+    <SidebarProvider
+      // Collapsed sidebar is a little narrower on screens up to 17"
+      style={{ '--sidebar-width-icon': 'var(--app-sidebar-width-icon)' } as CSSProperties}
+      className="[--app-sidebar-width-icon:5rem] wide:[--app-sidebar-width-icon:6rem]"
+    >
+      <AdminSidebar />
+      <SidebarInset className="min-w-0 bg-muted/30">
+        <MobileTopBar />
+        <main className="mx-auto w-full max-w-6xl px-4 py-6 md:px-8">
+          <Outlet />
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }

@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router'
 import { Toaster } from 'sonner'
 import { AdminLayout } from '@/components/AdminLayout'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import { ChangePasswordPage } from '@/pages/ChangePasswordPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { LoginPage } from '@/pages/LoginPage'
@@ -33,7 +34,9 @@ const router = createBrowserRouter(
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
+      <TooltipProvider delayDuration={0}>
+        <RouterProvider router={router} />
+      </TooltipProvider>
       <Toaster richColors position="top-center" />
     </QueryClientProvider>
   )
