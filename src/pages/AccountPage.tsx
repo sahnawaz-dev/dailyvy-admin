@@ -15,7 +15,7 @@ import { useSession } from '@/auth/session'
 import { api, errorMessage, type Admin } from '@/lib/api'
 import { formatAgo, formatDate, formatDateTime } from '@/lib/format'
 
-const ROLE_LABEL: Record<NonNullable<Admin['role']>, string> = { admin: 'Admin' }
+const ROLE_LABEL: Record<NonNullable<Admin['role']>, string> = { owner: 'Owner', admin: 'Admin' }
 
 function Detail({ label, children }: { label: string; children: React.ReactNode }) {
   return (

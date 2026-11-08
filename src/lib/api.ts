@@ -68,8 +68,8 @@ export interface Admin {
   id: string
   email: string
   name: string
-  /** Missing from an older server: treated as 'admin'. */
-  role?: 'admin'
+  /** owner: can also make users admins and admins users. Missing from an older server: 'admin'. */
+  role?: 'owner' | 'admin'
   createdAt?: string
   /** This login. */
   lastLoginAt?: string | null
@@ -112,6 +112,8 @@ export interface User {
   devices: number
   /** Active habits. */
   habits: number
+  /** Also has admin-panel access. */
+  isAdmin?: boolean
 }
 
 export interface SystemStatus {
