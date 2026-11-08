@@ -50,7 +50,8 @@ const navButton = cn(
   'wide:h-12 wide:gap-3.5 wide:text-[15px]',
   'group-data-[collapsible=icon]:size-12! group-data-[collapsible=icon]:rounded-[14px]! group-data-[collapsible=icon]:[&_svg]:size-5',
   'wide:group-data-[collapsible=icon]:size-14! wide:group-data-[collapsible=icon]:rounded-[16px]! wide:group-data-[collapsible=icon]:[&_svg]:size-6',
-  'group-data-[collapsible=icon]:justify-center',
+  // Collapsed: just the icon, centred (no label taking space, no side padding)
+  'group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:[&>span]:hidden',
 )
 
 function AdminSidebar() {
