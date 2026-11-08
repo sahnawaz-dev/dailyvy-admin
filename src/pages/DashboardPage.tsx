@@ -4,6 +4,7 @@ import { Link } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { SystemCard } from '@/components/SystemCard'
 import { api, type Stats } from '@/lib/api'
 
 export function DashboardPage() {
@@ -59,6 +60,7 @@ export function DashboardPage() {
           </CardContent>
         </Card>
       )}
+      <SystemCard />
     </div>
   )
 }

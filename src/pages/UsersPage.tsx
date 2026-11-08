@@ -1,32 +1,57 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { KeyRound, Search, Trash2, Users } from 'lucide-react'
+import { KeyRound, Pause, Play, Search, Trash2, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { ConfirmButton } from '@/components/ConfirmButton'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { api, errorMessage, type User } from '@/lib/api'
-import { formatDate } from '@/lib/format'
+import { formatAgo, formatDate, formatDateTime } from '@/lib/format'
+
+/** One line under the name: paused / still on the temporary password / not verified. */
+function StatusBadges({ user }: { user: User }) {
+  return (
+    <div className="mt-1 flex flex-wrap gap-1">
+      {user.pausedAt && <Badge variant="destructive">paused</Badge>}
+      {user.mustChangePassword && <Badge variant="secondary">temporary password</Badge>}
+      {!user.emailVerified && <Badge variant="outline">not verified</Badge>}
+    </div>
+  )
+}
 
 export function UsersPage() {
   const [search, setSearch] = useState('')
   const queryClient = useQueryClient()
   const users = useQuery({ queryKey: ['users'], queryFn: () => api.get<User[]>('/users') })
+  const refresh = () => queryClient.invalidateQueries()
 
   const resetPassword = useMutation({
     mutationFn: (user: User) => api.post(`/users/${user.id}/reset-password`),
-    onSuccess: (_data, user) => toast.success(`A new temporary password was emailed to ${user.email}`),
+    onSuccess: (_data, user) => {
+      toast.success(`A new temporary password was emailed to ${user.email}`)
+      refresh()
+    },
+    onError: (error) => toast.error(errorMessage(error)),
+  })
+  const pause = useMutation({
+    mutationFn: ({ user, paused }: { user: User; paused: boolean }) =>
+      api.post(`/users/${user.id}/${paused ? 'pause' : 'unpause'}`),
+    onSuccess: (_data, { user, paused }) => {
+      toast.success(paused ? `${user.name} is paused` : `${user.name} can log in again`)
+      refresh()
+    },
     onError: (error) => toast.error(errorMessage(error)),
   })
   const remove = useMutation({
     mutationFn: (user: User) => api.delete(`/users/${user.id}`),
     onSuccess: (_data, user) => {
       toast.success(`${user.name}'s account was removed`)
-      queryClient.invalidateQueries()
+      refresh()
     },
     onError: (error) => toast.error(errorMessage(error)),
   })
@@ -78,30 +103,38 @@ export function UsersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
+                  <TableHead>User</TableHead>
+                  <TableHead>Last active</TableHead>
+                  <TableHead className="text-right">Devices</TableHead>
+                  <TableHead className="text-right">Habits</TableHead>
                   <TableHead>Joined</TableHead>
-                  <TableHead>Timezone</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {shown.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.name}</TableCell>
+                  <TableRow key={user.id} className={user.pausedAt ? 'opacity-70' : undefined}>
                     <TableCell>
-                      <span className="mr-2">{user.email}</span>
-                      {!user.emailVerified && <Badge variant="outline">not verified</Badge>}
+                      <p className="font-medium">{user.name}</p>
+                      <p className="text-muted-foreground">{user.email}</p>
+                      <StatusBadges user={user} />
                     </TableCell>
+                    <TableCell
+                      className="whitespace-nowrap text-muted-foreground"
+                      title={user.lastActiveAt ? formatDateTime(user.lastActiveAt) : undefined}
+                    >
+                      {user.lastActiveAt ? formatAgo(user.lastActiveAt) : 'never'}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">{user.devices}</TableCell>
+                    <TableCell className="text-right tabular-nums">{user.habits}</TableCell>
                     <TableCell className="whitespace-nowrap text-muted-foreground">
                       {formatDate(user.registeredAt)}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{user.timezone}</TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-2">
                         <ConfirmButton
                           title={`New password for ${user.name}?`}
-                          description={`A new temporary password is emailed to ${user.email}. Their current password stops working and they're logged out on every device.`}
+                          description={`A new temporary password is emailed to ${user.email}. Their current password stops working, they're logged out on every device, and they choose their own at the next login.`}
                           confirmLabel="Send new password"
                           disabled={resetPassword.isPending}
                           onConfirm={() => resetPassword.mutate(user)}
@@ -109,9 +142,31 @@ export function UsersPage() {
                           <KeyRound />
                           New password
                         </ConfirmButton>
+                        {user.pausedAt ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={pause.isPending}
+                            onClick={() => pause.mutate({ user, paused: false })}
+                          >
+                            <Play />
+                            Unpause
+                          </Button>
+                        ) : (
+                          <ConfirmButton
+                            title={`Pause ${user.name}?`}
+                            description="They're logged out on every device and can't log in until you unpause them. Nothing is deleted."
+                            confirmLabel="Pause"
+                            disabled={pause.isPending}
+                            onConfirm={() => pause.mutate({ user, paused: true })}
+                          >
+                            <Pause />
+                            Pause
+                          </ConfirmButton>
+                        )}
                         <ConfirmButton
                           title={`Remove ${user.name}?`}
-                          description="Their account and ALL their data (habits, tasks, focus history, challenges) are deleted for good. This can't be undone."
+                          description="Their account and ALL their data (habits, tasks, focus history, challenges) are deleted for good. This can't be undone. To just stop them for now, use Pause."
                           confirmLabel="Remove for good"
                           destructive
                           variant="ghost"

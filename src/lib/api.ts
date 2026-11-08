@@ -94,4 +94,27 @@ export interface User {
   emailVerified: boolean
   timezone: string
   registeredAt: string
+  /** Still on the temporary password from the admin. */
+  mustChangePassword: boolean
+  /** Paused by the admin (can't log in), or null. */
+  pausedAt: string | null
+  /** Last time any of their devices used Dailyvy, or null if never. */
+  lastActiveAt: string | null
+  /** Devices logged in right now. */
+  devices: number
+  /** Active habits. */
+  habits: number
+}
+
+export interface SystemStatus {
+  email: {
+    transport: 'console' | 'smtp' | 'brevo'
+    from: string
+    lastSentAt: string | null
+    lastError: { at: string; message: string } | null
+  }
+  phonePush: boolean
+  browserPush: boolean
+  signupOpen: boolean
+  uptimeSeconds: number
 }
