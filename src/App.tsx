@@ -3,7 +3,7 @@ import { createBrowserRouter, Navigate, RouterProvider } from 'react-router'
 import { Toaster } from 'sonner'
 import { AdminLayout } from '@/components/AdminLayout'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { ChangePasswordPage } from '@/pages/ChangePasswordPage'
+import { AccountPage } from '@/pages/AccountPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { RequestsPage } from '@/pages/RequestsPage'
@@ -22,7 +22,8 @@ const router = createBrowserRouter(
         { index: true, element: <DashboardPage /> },
         { path: 'requests', element: <RequestsPage /> },
         { path: 'users', element: <UsersPage /> },
-        { path: 'password', element: <ChangePasswordPage /> },
+        { path: 'account', element: <AccountPage /> },
+        { path: 'password', element: <Navigate to="/account" replace /> },
       ],
     },
     { path: '*', element: <Navigate to="/" replace /> },

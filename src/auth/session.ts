@@ -11,6 +11,7 @@ interface SessionState {
   admin: Admin | null
   login: (token: string, admin: Admin) => void
   setToken: (token: string) => void
+  setAdmin: (admin: Admin) => void
   logout: () => void
 }
 
@@ -21,6 +22,7 @@ export const useSession = create<SessionState>()(
       admin: null,
       login: (token, admin) => set({ token, admin }),
       setToken: (token) => set({ token }),
+      setAdmin: (admin) => set({ admin }),
       logout: () => set({ token: null, admin: null }),
     }),
     { name: 'dailyvy-admin:session', storage: createJSONStorage(() => sessionStorage) },

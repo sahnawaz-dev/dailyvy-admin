@@ -9,7 +9,6 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Equal,
-  KeyRound,
   LayoutDashboard,
   LogOut,
   UserPlus,
@@ -30,6 +29,7 @@ import {
   SidebarRail,
   useSidebar,
 } from '@/components/ui/sidebar'
+import { AdminAvatar } from '@/components/AdminAvatar'
 import { useSession } from '@/auth/session'
 import { cn } from '@/lib/utils'
 
@@ -37,7 +37,6 @@ const NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/requests', label: 'Access requests', icon: UserPlus },
   { to: '/users', label: 'Users', icon: Users },
-  { to: '/password', label: 'Change password', icon: KeyRound },
 ]
 
 const logoSrc = `${import.meta.env.BASE_URL}favicon-32.png`
@@ -113,13 +112,24 @@ function AdminSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="pr-3 md:pr-0 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:pr-2">
-        <p
-          className="truncate px-4 pb-1 text-xs text-muted-foreground md:px-2 group-data-[collapsible=icon]:hidden"
-          title={admin?.email}
-        >
-          {admin?.email}
-        </p>
         <SidebarMenu className="group-data-[collapsible=icon]:items-center">
+          {/* You: initials (+ name and email when expanded) → the Account page */}
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={pathname.startsWith('/account')}
+              tooltip={admin?.name ?? 'Account'}
+              className={cn(navButton, 'h-14 md:h-14 wide:h-14')}
+            >
+              <NavLink to="/account" onClick={closeOnPhone}>
+                <AdminAvatar name={admin?.name ?? ''} className="wide:size-9 wide:text-sm" />
+                <span className="flex min-w-0 flex-col leading-tight">
+                  <span className="truncate font-medium">{admin?.name}</span>
+                  <span className="truncate text-xs text-muted-foreground">{admin?.email}</span>
+                </span>
+              </NavLink>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton tooltip="Log out" onClick={logout} className={navButton}>
               <LogOut />
